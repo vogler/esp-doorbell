@@ -41,14 +41,13 @@ void setup_WiFi() {
 
 void setup_OTA() {
   ArduinoOTA.onStart([]() {
-    String type;
+    Serial.println("OTA: Start updating ");
     if (ArduinoOTA.getCommand() == U_FLASH) {
-      type = "sketch";
+      Serial.println("sketch");
     } else { // U_SPIFFS
-      type = "filesystem";
+      Serial.println("filesystem");
     }
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("OTA: Start updating " + type);
     // OLED_stat("OTA start");
   });
   ArduinoOTA.onEnd([]() {
@@ -78,6 +77,11 @@ void setup_OTA() {
 }
 
 
+// JSON
+char buf[200];
+#define json(s, ...) (sprintf(buf, "{ " s " }", __VA_ARGS__), buf)
+
+
 // MQTT
 #include <PubSubClient.h> // https://github.com/knolleary/pubsubclient
 PubSubClient mqtt(wifi);
@@ -89,12 +93,13 @@ void setup_MQTT() {
   // mqtt.setCallback(mqtt_callback);
   randomSeed(micros());
   while (!mqtt.connected()) {
-    sprintf(clientId, "esp-doorbell-%04x", random(0xffff)); // 4 chars for hex id
+    snprintf(clientId, sizeof(clientId), "esp-doorbell-%04x", random(0xffff)); // 4 chars for hex id
     Serial.printf("Connect MQTT to %s as %s ... ", MQTT_SERVER, clientId);
     if (mqtt.connect(clientId)) {
       Serial.printf("connected to mqtt://%s\n", MQTT_SERVER);
       while(!mqtt.subscribe(MQTT_TOPIC_SET)) Serial.print(".");
       Serial.printf("subscribed to topic %s\n", MQTT_TOPIC);
+      mqtt.publish(MQTT_TOPIC "/status", json("\"status\": \"connected\", \"clientId\": \"%s\", \"millis\": %lu", clientId, millis()));
     } else {
       Serial.printf("failed, rc=%d. retry in 1s.\n", mqtt.state()); // -2 = network connection failed; https://pubsubclient.knolleary.net/api#state
       mqtt.disconnect();
@@ -102,8 +107,3 @@ void setup_MQTT() {
     }
   }
 }
-
-
-// JSON
-char buf[200];
-#define json(s, ...) (sprintf(buf, "{ " s " }", __VA_ARGS__), buf)

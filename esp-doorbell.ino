@@ -9,7 +9,7 @@
 // settings via MQTT_TOPIC_SET
 unsigned int interval = 100; // check every interval ms and let hits fall off
 unsigned int threshold = 2000; // publish mqtt msg once we reach this number of hits
-unsigned int msg_debounce = 2000; // do not publish another msg for this time (ms)
+unsigned int msg_debounce = 3000; // do not publish another msg for this time (ms)
 unsigned int slope = 2; // divide by this factor each interval to drop hits back to 0
 
 #define UPD(var)   if(doc[#var]) { var = doc[#var]; Serial.printf("%s = %u;\n", #var, var); }
@@ -37,7 +37,7 @@ void setup() {
   // setup_OTA();
   mqtt.setCallback(mqtt_callback);
   setup_MQTT();
-  
+
   pinMode(MIC_PIN, INPUT);
 }
 
@@ -59,6 +59,7 @@ void loop() {
       Serial.println(a);
       if (a >= threshold && millis() - lastMsg > msg_debounce) {
         mqtt.publish(MQTT_TOPIC, json("\"hits\": %u, \"millis\": %lu", a, millis()));
+        Serial.printf("publish %s", buf);
         lastMsg = millis();
       }
       a /= slope;
