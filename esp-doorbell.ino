@@ -34,7 +34,7 @@ void setup() {
   Serial.begin(38400);
   Serial.println("setup");
   setup_WiFi();
-  // setup_OTA();
+  setup_OTA();
   mqtt.setCallback(mqtt_callback);
   setup_MQTT();
 
